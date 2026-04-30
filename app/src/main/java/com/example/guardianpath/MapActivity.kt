@@ -40,6 +40,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     private var destinationLocation: LatLng? = null
     private var isNavigationStarted = false
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
+    private val riskCircles = mutableListOf<com.google.android.gms.maps.model.Circle>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,8 +86,6 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         
-        drawDangerZones()
-
         requestLocationPermissions()
     }
 
@@ -356,14 +355,28 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun drawDangerZones() {
-        for (zone in SafetyEngine.dangerZones) {
-            map.addCircle(com.google.android.gms.maps.model.CircleOptions()
-                .center(zone)
-                .radius(SafetyEngine.DANGER_ZONE_RADIUS_METERS)
+        // No longer used for static drawing
+    }
+
+    private fun clearRiskCircles() {
+        for (circle in riskCircles) {
+            circle.remove()
+        }
+        riskCircles.clear()
+    }
+
+    private fun drawRiskZonesOnRoute(points: List<LatLng>) {
+        clearRiskCircles()
+        val dangerPoints = SafetyEngine.getDangerPointsOnRoute(points)
+        for (point in dangerPoints) {
+            val circle = map.addCircle(com.google.android.gms.maps.model.CircleOptions()
+                .center(point)
+                .radius(SafetyEngine.DANGER_ZONE_RADIUS_METERS * 1.5)
                 .strokeColor(Color.RED)
-                .strokeWidth(2f)
-                .fillColor(Color.argb(75, 255, 0, 0))
+                .strokeWidth(3f)
+                .fillColor(Color.argb(60, 255, 0, 0)) // 60 alpha red
             )
+            riskCircles.add(circle)
         }
     }
 
@@ -412,8 +425,10 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback {
         tvRouteStatus.text = "Status: ${routeInfo.agentMessage}"
         if (routeInfo.dangerScore > 0) {
             tvRouteStatus.setTextColor(android.graphics.Color.RED)
+            drawRiskZonesOnRoute(routeInfo.routePoints)
         } else {
             tvRouteStatus.setTextColor(android.graphics.Color.parseColor("#4CAF50")) // Green
+            clearRiskCircles()
         }
     }
 

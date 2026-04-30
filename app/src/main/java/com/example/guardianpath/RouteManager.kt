@@ -16,7 +16,8 @@ data class RouteInfo(
     val distanceMeters: Double,
     val durationSeconds: Double,
     val dangerScore: Double,
-    val agentMessage: String
+    val agentMessage: String,
+    val routePoints: List<LatLng>
 )
 
 object RouteManager {
@@ -110,7 +111,8 @@ object RouteManager {
                                         distanceMeters = bestDistance,
                                         durationSeconds = shortestDuration,
                                         dangerScore = lowestDangerScore,
-                                        agentMessage = agentMessage
+                                        agentMessage = agentMessage,
+                                        routePoints = bestRoutePoints
                                     )
                                     onAgentResult?.invoke(routeInfo)
                                 }
